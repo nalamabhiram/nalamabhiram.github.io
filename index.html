@@ -1,0 +1,636 @@
+<!--
+************************************
+*****Developer:Abhiram Nalam********
+************************************
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Slot Booking Helper-Abhiram</title>
+  <!-- <script id="sap-ui-bootstrap"
+		src="https://openui5.hana.ondemand.com/resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_belize"
+		data-sap-ui-libs="sap.m"
+		data-sap-ui-resourceroots='{"Quickstart": "./"}'
+		data-sap-ui-onInit="module:Quickstart/index"
+		data-sap-ui-compatVersion="edge"
+		data-sap-ui-async="true">
+	</script> -->
+  <script id="sap-ui-bootstrap" src="https://openui5.hana.ondemand.com/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_belize" data-sap-ui-libs="sap.m" data-sap-ui-resourceroots='{"Quickstart": "./"}'
+    data-sap-ui-compatVersion="edge" data-sap-ui-async="true">
+    </script>
+  <script type="text/JavaScript" src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
+
+  <script type="text/javascript">
+     sap.ui.getCore().attachInit(async function () {
+      if (!sap.ui.Device.support.touch) {
+        this._sContentDensityClass = "sapUiSizeCompact";
+      } else {
+        this._sContentDensityClass = "sapUiSizeCozy";
+      }
+      if (!localStorage.getItem("SlotBookHelperCahedData")) {
+        localStorage.setItem("SlotBookHelperCahedData", "{}");
+      }
+      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+      let sServerEndPoint = "https://cdn-api.co-vin.in";
+      let oModel = new sap.ui.model.json.JSONModel();
+      oModel.setData(
+        {
+          MobileNumber: _.get(oLocalStorageData, "MobileNumber", ""),
+          OTP: "",
+          txnId: "",
+          token: "",
+          SlotSet: [],
+          captchaimage: "",
+          captcha: "",
+          beneficiaries: [],
+          States: [],
+          SelectedStateID: _.get(oLocalStorageData, "SelectedStateID", ""),
+          Districts: [],
+          SelectedDistrictIDs: _.get(oLocalStorageData, "SelectedDistrictIDs", []),
+          PinCodes: _.get(oLocalStorageData, "PinCodes", ""),
+          BenRefID: _.get(oLocalStorageData, "BenRefID", ""),
+          Dose: _.get(oLocalStorageData, "Dose", 1),
+          Age: _.get(oLocalStorageData, "Age", "18")
+        }
+      );
+      let oList = new sap.m.List({
+        headerToolbar: new sap.m.Toolbar({
+          content: [
+            new sap.m.ToolbarSpacer(),
+            new sap.m.Button({
+              text: "Refresh Slots", press: function () {
+                fnFetchEmptySlots();
+              }
+            }),
+            new sap.m.Button({
+              text: "Refresh Captcha", press: function () {
+                fnGetcaptcha();
+              }
+            }),
+            new sap.m.Button({
+              visible: false,
+              text: "Cancle Appointments", press: function () {
+                fnCancelAppointments();
+              }
+            }),
+          ]
+        }),
+        group: true,
+        groupHeaderFactory: '.getGroupHeader'
+      }),
+        oListItem = new sap.m.CustomListItem({
+          content: [
+            new sap.m.HBox({
+              items: [
+                new sap.m.VBox({
+                  items: [
+
+                    ["name", "block_name", "address", "district_name", "pincode", "available_capacity_dose1", "min_age_limit", "date", "vaccine", "session_id"].map((skey) => {
+                      return new sap.m.ObjectAttribute({
+                        title: skey,
+                        text: `{Local>${skey}}`
+                      })
+                    })]
+                }),
+                new sap.m.VBox({
+                  items: [
+                    new sap.m.Image({
+                      src: "{Local>/captchaimage}"
+                    }),
+                    new sap.m.HBox({
+                      items: [
+                        new sap.m.Input({ value: "{Local>/captcha}", placeHolder: "Enter Image Text", }),
+                        new sap.m.Button({
+                          text: "book", press: function (oEvent) {
+                            fnBookSlot(oEvent.getSource().getBindingContext("Local").getObject())
+                          }
+                        })
+                      ]
+                    })
+
+                  ]
+                }),
+
+              ]
+            })
+          ]
+        });
+      oListItem.addStyleClass("sapUiResponsiveMargin")
+      oList.bindItems({
+        path: "Local>/SlotSet",
+        template: oListItem
+      });
+      let oMasterPageContent;
+      oMasterPageContent = new sap.m.VBox({
+        items: [
+          new sap.m.Label({ text: "Mobile Number" }),
+          new sap.m.HBox({
+            items: [
+
+              new sap.m.Input({
+                placeHolder: "Enter Mobile Number", valueLiveUpdate: true,
+                value: "{Local>/MobileNumber}",
+                change: function (oEvent) {
+                  let sMobileNumber = oEvent.getSource().getValue();
+                  let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                  _.set(oLocalStorageData, "MobileNumber", sMobileNumber);
+                  localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                }
+              }),
+              new sap.m.Button({
+                text: "Generate OTP",
+                press: function () {
+                  TriggerOTP()
+                }
+              })
+            ]
+          }),
+          new sap.m.Label({ text: "Enter the OTP", visible: "{=${Local>/MobileNumber}.length>0}" }),
+          new sap.m.HBox({
+            visible: "{=${Local>/MobileNumber}.length>0}",
+            items: [
+
+              new sap.m.Input({
+                placeHolder: "Enter OTP",
+                value: "{Local>/OTP}"
+              }),
+              new sap.m.Button({
+                text: "Submit OTP",
+                press: function () {
+                  ValidateOTP()
+                }
+              })
+            ]
+          }),
+          new sap.m.Panel({
+            headerToolbar: [
+              new sap.m.OverflowToolbar({
+                content: [
+                  new sap.m.Title({ text: "Additional configuration" })
+                ]
+              })
+            ],
+            expanded: false,
+            expandable: true,
+            content: [
+              new sap.m.VBox({
+                items: [
+                  new sap.m.Label({ text: "Select State" }),
+                  new sap.m.ComboBox({
+                    placeholder: "Select State",
+                    selectedKey: "{Local>/SelectedStateID}",
+                    items: {
+                      path: `Local>/States`,
+                      templateShareable: false,
+                      template: new sap.ui.core.Item({
+                        text: "{Local>state_name}",
+                        key: "{Local>state_id}"
+                      })
+                    }, selectionChange: function (oEvent) {
+                      let sSeletedStateID = oEvent.getParameter("selectedItem").getBindingContext("Local").getProperty("state_id");
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "SelectedStateID", sSeletedStateID);
+                      _.set(oLocalStorageData, "SelectedDistrictIDs", []);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                      oApp.getModel("Local").setProperty("/SelectedDistrictIDs", [])
+                      fnFetchDistricts(sSeletedStateID);
+                    }
+                  }),
+                  new sap.m.Label({ text: "Select District" }),
+                  new sap.m.MultiComboBox({
+                    selectedKeys: "{Local>/SelectedDistrictIDs}",
+                    selectionFinish: function (oEvent) {
+                      let oSelectedDistrictIDs = oEvent.getSource().getSelectedKeys();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "SelectedDistrictIDs", oSelectedDistrictIDs);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    },
+                    placeholder: "Select Districts", items: {
+                      path: `Local>/Districts`,
+                      templateShareable: false,
+                      template: new sap.ui.core.Item({
+                        text: "{Local>district_name}",
+                        key: "{Local>district_id}"
+                      })
+                    }
+                  }),
+                  new sap.m.Label({ text: "Coma Seperated pincodes" }),
+                  new sap.m.Input({
+                    placeholder: "Coma Seperated pincodes", value: "{Local>/PinCodes}", change: function (oEvent) {
+                      let sPincodes = oEvent.getSource().getValue();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "PinCodes", sPincodes);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Label({ text: "Coma Seperated Benificiaries Ref ID" }),
+                  new sap.m.Input({
+                    placeholder: "Coma Seperated Benificiari Ref ID", value: "{Local>/BenRefID}", change: function (oEvent) {
+                      let sPincodes = oEvent.getSource().getValue();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "BenRefID", sPincodes);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Label({ text: "Dose" }),
+                  new sap.m.ComboBox({
+                    placeholder: "Select Dose",
+                    selectedKey: "{Local>/Dose}",
+                    items: [new sap.ui.core.Item({
+                      text: "1",
+                      key: "1"
+                    }),
+                    new sap.ui.core.Item({
+                      text: "2",
+                      key: "2"
+                    })],
+                    selectionChange: function (oEvent) {
+                      let sDoseKey = oEvent.getParameter("selectedItem").getKey();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "Dose", sDoseKey);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Label({ text: "Age" }),
+                  new sap.m.ComboBox({
+                    placeholder: "Select Age Type",
+                    selectedKey: "{Local>/Age}",
+                    items: [new sap.ui.core.Item({
+                      text: "18+",
+                      key: "18"
+                    }),
+                    new sap.ui.core.Item({
+                      text: "45+",
+                      key: "45"
+                    })],
+                    selectionChange: function (oEvent) {
+                      let sDoseKey = oEvent.getParameter("selectedItem").getKey();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "Age", sDoseKey);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  })
+                ]
+              })
+
+
+            ]
+          })
+        ]
+      })
+
+      let oApp = new sap.m.SplitApp({
+        initialDetail: "detail",
+        initialMaster: "master",
+        detailPages: [new sap.m.Page({
+          showNavButton: true, navButtonPress: function () {
+            oApp.toMaster(oApp.getMasterPages()[0], "flip");
+          },
+          id: "detail",
+          showHeader: sap.ui.Device.system.phone,
+          showFooter: false,
+          content: [oList]
+        })],
+        masterPages: [new sap.m.Page({
+          customHeader: new sap.m.Toolbar({
+            content: [
+              new sap.m.ToolbarSpacer(),
+              new sap.m.Button({
+                text: "Display Slots", press: function () {
+                  oApp.toDetail(oApp.getDetailPages()[0], "flip");
+                }
+              })
+            ]
+          }),
+          id: "master",
+          showHeader: sap.ui.Device.system.phone,
+          showFooter: false,
+          content: [oMasterPageContent]
+        })]
+      });
+      oApp.setBusyIndicatorDelay(0);
+      oApp.addStyleClass("sapUiResponsiveMargin");
+      oApp.setModel(oModel, "Local");
+      oApp.placeAt("content");
+      //oApp.placeAt("content");
+      oMasterPageContent.addStyleClass("sapUiResponsiveMargin");
+      //if (oApp.getModel("Local").getProperty("/MobileNumber")) TriggerOTP();
+      fnFetchFilterData();
+      function TriggerOTP() {
+        let sNumber = oApp.getModel("Local").getProperty("/MobileNumber");
+        // if (sap.ui.Device.system.phone) fnAutoDetectOTP();
+        oApp.setBusy(true);
+        $.ajax({
+          type: "POST",
+          url: "https://cdn-api.co-vin.in/api/v2/auth/generateMobileOTP",
+          data: JSON.stringify({
+            "mobile": parseInt(sNumber, 10),
+            "secret": "U2FsdGVkX19pqyRU5Z1FWLA/jHYkRquW1czLQmg3DHdtmbCvwqSy4R0v5WLT8REJ0hzr1ziCbNUztK6tK+6QPw=="
+            //   "secret": "U2FsdGVkX1+t73ym5ppCzdiyA7IG619Jy1Vz/k2RMMHCdYg4ahE2HpuTIldkvp91MXbtrePbUaasOzUaij4KEg=="
+          }),
+          contentType: "application/json",
+          success: (oResponse) => {
+            oApp.getModel("Local").setProperty("/txnId", _.get(oResponse, "txnId", ""));
+            sap.m.MessageToast.show("OTP Triggered");
+            oApp.setBusy(false);
+          },
+          error: (jqXhr, textStatus, errorMessage) => {
+            sap.m.MessageToast.show("Error");
+            oApp.setBusy(false);
+          }
+        });
+      }
+      // async function fnAutoDetectOTP() {
+      //   if ('OTPCredential' in window) {
+      //     window.addEventListener('DOMContentLoaded', e => {
+      //       const ac = new AbortController();
+      //       setTimeout(() => {
+      //         ac.abort();
+      //       }, 3 * 60 * 1000);
+
+      //       navigator.credentials.get({
+      //         otp: { transport: ['sms'] },
+      //         signal: ac.signal,
+      //       }).then(otp => {
+      //         oApp.getModel("Local").setProperty("/OTP",otp.code)
+      //         ValidateOTP()
+      //       }).catch(err => {
+      //         console.log(err)
+      //       });
+      //     })
+      //   }
+      // }
+
+      async function ValidateOTP() {
+        let oModel = oApp.getModel("Local"),
+          sOTP = oModel.getProperty("/OTP"),
+          sEncodedOTP = "",
+          sTransactionID = oModel.getProperty("/txnId");
+        sEncodedOTP = await SHA256(sOTP);
+        oApp.setBusy(true);
+        await new Promise((resolve, reject) => {
+          $.ajax({
+            type: "POST",
+            url: "https://cdn-api.co-vin.in/api/v2/auth/validateMobileOtp",
+            data: JSON.stringify({
+              otp: sEncodedOTP,
+              txnId: sTransactionID
+            }),
+            contentType: "application/json",
+            success: (oResponse) => {
+              oApp.getModel("Local").setProperty("/token", _.get(oResponse, "token", ""));
+              oApp.setBusy(false);
+              resolve();
+            },
+            error: (jqXhr, textStatus, errorMessage) => {
+              sap.m.MessageToast.show("Error");
+              oApp.setBusy(false);
+              resolve();
+            }
+          });
+        })
+        fnFetchEmptySlots();
+        fnGetBenificiaries();
+      }
+      function fnGetAuthHeader() {
+        return { authorization: `Bearer ${oApp.getModel("Local").getProperty("/token")}` }
+      }
+      function fnFetchEmptySlots() {
+        oApp.getModel("Local").setProperty("/SlotSet", []);
+        let oURL = [];
+        let oSelectedDistricts = oApp.getModel("Local").getProperty("/SelectedDistrictIDs");
+        let sPinCodes = oApp.getModel("Local").getProperty("/PinCodes");
+        _.each(oSelectedDistricts, sDistrict => {
+          oURL.push(`https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByDistrict?district_id=${sDistrict}&date=${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}`)
+        })
+        _.each(sPinCodes.split(","), sPincCode => {
+          if (sPincCode) oURL.push(`https://cdn-api.co-vin.in/api/v2/appointment/sessions/calendarByPin?pincode=${sPincCode}&date=${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}`)
+        })
+        if (!oURL.length) {
+          sap.m.MessageToast.show("Please enter valid Pincodes or slelect states and district to search vaccination ceneters");
+          return;
+        }
+        let bRefreshToken = false;
+        function fnfetchData(sURL) {
+          return new Promise((resolve, reject) => {
+            $.ajax({
+              type: "GET",
+              url: sURL,
+              headers: { ...fnGetAuthHeader() },
+              contentType: "application/json",
+              success: (oResponse) => {
+                resolve(oResponse);
+              },
+              error: (jqXhr, textStatus, errorMessage) => {
+                resolve([]);
+                bRefreshToken = true;
+              }
+            });
+          })
+        }
+        oApp.setBusy(true);
+        Promise.all(oURL.map(sURL => fnfetchData(sURL))).then((oResponses) => {
+          oApp.setBusy(false);
+          let oItems = [], oFinalItems = [];
+          let centers = _.concat(...oResponses.map((oResponse) => oResponse.centers));
+          let Dose = parseInt(oApp.getModel("Local").getProperty("/Dose") || 1, 10), sDoseProp;
+          if (Dose === 2) {
+            sDoseProp = "available_capacity_dose2"
+          } else {
+            sDoseProp = "available_capacity_dose1"
+          }
+          _.each(centers, center => {
+            _.each(_.get(center, "sessions", []), session => {
+              if (_.get(session, sDoseProp, 0) > 1 && _.get(session, "min_age_limit", 45) === parseInt(oApp.getModel("Local").getProperty("/Age") || 18, 10)) {
+                oFinalItems.push({
+                  ..._.pick(center, ["name", "block_name", "address", "district_name", "pincode"]),
+                  ..._.pick(session, ["session_id", "available_capacity_dose1", "min_age_limit", "date", "vaccine", "slots"])
+                })
+              }
+            })
+          })
+          oApp.getModel("Local").setProperty("/SlotSet", oFinalItems);
+          if (!oFinalItems.length) {
+            if (bRefreshToken) {
+              sap.m.MessageToast.show("Please get new OTP");
+              if (sap.ui.Device.system.phone) oApp.toMaster(oApp.getMasterPages()[0], "flip");
+            }
+            else sap.m.MessageToast.show("No Slots Availlable");
+          }
+          else {
+            fnGetcaptcha();
+            oApp.toDetail(oApp.getDetailPages()[0], "flip");
+          }
+        });
+      }
+      function fnBookSlot(oSlotDetail) {
+        let oBeneficiariesRefId = _.compact((oApp.getModel("Local").getProperty("/BenRefID")).split(",")) || [],
+          oInValidBeneficiariesRefId = [],
+          oNumberRelatedBenificiariesIDList = _.map(_.cloneDeep(oApp.getModel("Local").getProperty("/beneficiaries")), (oBenData) => _.get(oBenData, "beneficiary_reference_id", ""));
+        if (!oBeneficiariesRefId.length) {
+          oBeneficiariesRefId = oNumberRelatedBenificiariesIDList;
+        } else {
+          oInValidBeneficiariesRefId = _.compact(oBeneficiariesRefId.map((sID) => {
+            if (_.indexOf(oNumberRelatedBenificiariesIDList, sID) === -1) return sID;
+            else return "";
+          }));
+          if (oInValidBeneficiariesRefId.length) {
+            sap.m.MessageToast.show(`${oValidBeneficiariesRefId.join(",")} does not belong to the Logged In Number,please Add correct benificiaries in the configuration section`)
+            return;
+          }
+        }
+        let oPayload = {
+          "dose": parseInt(oApp.getModel("Local").getProperty("/Dose") || 1, 10),
+          "session_id": _.get(oSlotDetail, "session_id", ""),
+          "slot": _.get(oSlotDetail, `slots.${_.get(oSlotDetail, "slots", []).length - 1}`, ""),
+          "beneficiaries": oBeneficiariesRefId,
+          "captcha": oApp.getModel("Local").getProperty("/captcha")
+        };
+        oApp.setBusy(true);
+        $.ajax({
+          type: "POST",
+          url: "https://cdn-api.co-vin.in/api/v2/appointment/schedule",
+          data: JSON.stringify(oPayload),
+          contentType: "application/json",
+          headers: { ...fnGetAuthHeader() },
+          success: (oResponse) => {
+            console.log(oResponse)
+            sap.m.MessageToast.show("Appointment booked successfully");
+            oApp.setBusy(false);
+          },
+          error: (oResponse, textStatus, errorMessage) => {
+            console.log("Error");
+            console.log(oResponse.responseJSON.error)
+            console.log(oResponse.responseJSON.errorCode)
+            sap.m.MessageToast.show(`Error ${oResponse.responseJSON.error} ${oResponse.responseJSON.errorCode}`)
+            oApp.setBusy(false);
+          }
+        });
+      }
+      function fnGetcaptcha() {
+        oApp.setBusy(true);
+        $.ajax({
+          type: "POST",
+          url: "https://cdn-api.co-vin.in/api/v2/auth/getRecaptcha",
+          data: JSON.stringify({}),
+          contentType: "application/json",
+          headers: { ...fnGetAuthHeader() },
+          success: (oResponse) => {
+            oApp.getModel("Local").setProperty("/captchaimage", `data:image/svg+xml;base64,${window.btoa(oResponse.captcha)}`)
+            oApp.setBusy(false);
+          },
+          error: (oResponse, textStatus, errorMessage) => {
+            console.log("Error")
+            sap.m.MessageToast.show("Please get new OTP");
+            oApp.setBusy(false);
+            if (sap.ui.Device.system.phone) oApp.toMaster(oApp.getMasterPages()[0], "flip");
+          }
+        });
+      }
+      async function fnCancelAppointments() {
+        await fnGetBenificiaries();
+        let oBenificiaries = oApp.getModel("Local").getProperty("/beneficiaries");
+        let oBenificiariesIdToCancel = (oApp.getModel("Local").getProperty("/BenRefID")).split(",") || [];
+        if (!oBenificiariesIdToCancel.length) {
+          oBenificiariesIdToCancel = _.map(_.cloneDeep(oApp.getModel("Local").getProperty("/beneficiaries")), (oBenData) => _.get(oBenData, "beneficiary_reference_id", ""));
+        }
+        let oPayload = {
+          "appointment_id": "",
+          "beneficiariesToCancel": oBenificiariesIdToCancel
+        };
+        _.map(_.cloneDeep(oApp.getModel("Local").getProperty("/beneficiaries")), (oBenData) => {
+          if (_.indexOf(oBenificiariesIdToCancel, _.get(oBenData, "beneficiary_reference_id", "")) !== -1) _.set(oPayload, "appointment_id", _.get(oBenData, "appointments.0.appointment_id", ""));
+        }
+        )
+        $.ajax({
+          type: "POST",
+          url: "https://cdn-api.co-vin.in/api/v2/appointment/cancel",
+          data: JSON.stringify(oPayload),
+          contentType: "application/json",
+          headers: { ...fnGetAuthHeader() },
+          success: (oResponse) => {
+            console.log("Cancelled")
+            sap.m.MessageToast.show("All Appointments Canceled");
+          },
+          error: (oResponse, textStatus, errorMessage) => {
+            sap.m.MessageToast.show("Error");
+          }
+        });
+      }
+
+      function fnGetBenificiaries() {
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            type: "GET",
+            url: "https://cdn-api.co-vin.in/api/v2/appointment/beneficiaries",
+            contentType: "application/json",
+            headers: { ...fnGetAuthHeader() },
+            success: (oResponse) => {
+              oApp.getModel("Local").setProperty("/beneficiaries", _.get(oResponse, "beneficiaries", []));
+              resolve();
+            },
+            error: (oResponse, textStatus, errorMessage) => {
+              console.log("Error")
+              sap.m.MessageToast.show("Please get new OTP");
+              if (sap.ui.Device.system.phone) oApp.toMaster(oApp.getMasterPages()[0], "flip");
+              resolve();
+            }
+          });
+        })
+      }
+
+      async function fnFetchFilterData() {
+        let oDistricts = [];
+        let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+        let oStates = _.get(oLocalStorageData, "States", []);
+        let sSelectedStateID = _.get(oLocalStorageData, "SelectedStateID", "");
+        if (!oStates.length) {
+          oStates = await new Promise((resolve, reject) => {
+            $.ajax({
+              type: "GET",
+              url: "https://cdn-api.co-vin.in/api/v2/admin/location/states",
+              contentType: "application/json",
+              success: (oResponse) => {
+                resolve(_.get(oResponse, "states", []));
+              },
+              error: (oResponse, textStatus, errorMessage) => {
+                sap.m.MessageToast.show("Error");
+                resolve([]);
+              }
+            });
+          })
+          _.set(oLocalStorageData, "States", oStates);
+          localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+        }
+        oApp.getModel("Local").setProperty("/States", oStates);
+        if (sSelectedStateID) fnFetchDistricts(sSelectedStateID);
+      }
+      function fnFetchDistricts(sStateID) {
+        $.ajax({
+          type: "GET",
+          url: `https://cdn-api.co-vin.in/api/v2/admin/location/districts/${sStateID}`,
+          contentType: "application/json",
+          success: (oResponse) => {
+            oApp.getModel("Local").setProperty("/Districts", _.get(oResponse, "districts", []));
+          },
+          error: (jqXhr, textStatus, errorMessage) => {
+
+          }
+        });
+      }
+      async function SHA256(message) {
+        const msgUint8 = new TextEncoder().encode(message);                           // encode as (utf-8) Uint8Array
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);           // hash the message
+        const hashArray = Array.from(new Uint8Array(hashBuffer));                     // convert buffer to byte array
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+        return hashHex;
+      }
+    });
+  </script>
+</head>
+<body class="sapUiBody" id="content"></body>
+</html>
