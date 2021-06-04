@@ -25,7 +25,7 @@
   <script type="text/JavaScript" src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
 
   <script type="text/javascript">
-     sap.ui.getCore().attachInit(async function () {
+    sap.ui.getCore().attachInit(async function () {
       if (!sap.ui.Device.support.touch) {
         this._sContentDensityClass = "sapUiSizeCompact";
       } else {
@@ -124,45 +124,49 @@
         path: "Local>/SlotSet",
         template: oListItem
       });
-      let oMasterPageContent;
+       let oMasterPageContent;
       oMasterPageContent = new sap.m.VBox({
         items: [
-          new sap.m.Label({ text: "Mobile Number" }),
-          new sap.m.HBox({
-            items: [
+          new sap.m.Panel({
+            content: [
+              new sap.m.Label({ text: "Mobile Number:" }),
+              new sap.m.HBox({
+                items: [
 
-              new sap.m.Input({
-                placeHolder: "Enter Mobile Number", valueLiveUpdate: true,
-                value: "{Local>/MobileNumber}",
-                change: function (oEvent) {
-                  let sMobileNumber = oEvent.getSource().getValue();
-                  let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
-                  _.set(oLocalStorageData, "MobileNumber", sMobileNumber);
-                  localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
-                }
+                  new sap.m.Input({
+                    placeHolder: "Enter Mobile Number", valueLiveUpdate: true,
+                    value: "{Local>/MobileNumber}",
+                    change: function (oEvent) {
+                      let sMobileNumber = oEvent.getSource().getValue();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "MobileNumber", sMobileNumber);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Button({
+                    text: "Generate OTP",
+                    press: function () {
+                      TriggerOTP()
+                    }
+                  })
+                ]
               }),
-              new sap.m.Button({
-                text: "Generate OTP",
-                press: function () {
-                  TriggerOTP()
-                }
-              })
-            ]
-          }),
-          new sap.m.Label({ text: "Enter the OTP", visible: "{=${Local>/MobileNumber}.length>0}" }),
-          new sap.m.HBox({
-            visible: "{=${Local>/MobileNumber}.length>0}",
-            items: [
+              new sap.m.Label({ text: "Enter the OTP", visible: "{=${Local>/MobileNumber}.length>0}" }),
+              new sap.m.HBox({
+                visible: "{=${Local>/MobileNumber}.length>0}",
+                items: [
 
-              new sap.m.Input({
-                placeHolder: "Enter OTP",
-                value: "{Local>/OTP}"
-              }),
-              new sap.m.Button({
-                text: "Submit OTP",
-                press: function () {
-                  ValidateOTP()
-                }
+                  new sap.m.Input({
+                    placeHolder: "Enter OTP",
+                    value: "{Local>/OTP}"
+                  }),
+                  new sap.m.Button({
+                    text: "Submit OTP",
+                    press: function () {
+                      ValidateOTP()
+                    }
+                  })
+                ]
               })
             ]
           }),
@@ -282,16 +286,27 @@
           })
         ]
       })
-
       let oApp = new sap.m.SplitApp({
         initialDetail: "detail",
         initialMaster: "master",
         detailPages: [new sap.m.Page({
-          showNavButton: true, navButtonPress: function () {
-            oApp.toMaster(oApp.getMasterPages()[0], "flip");
-          },
+          showNavButton: false,
+          customHeader: new sap.m.Toolbar({
+            content: [
+              new sap.m.Button({
+                visible:sap.ui.Device.system.phone,
+                icon: "sap-icon://nav-back", press: function () {
+                  oApp.toMaster(oApp.getMasterPages()[0], "flip");
+                }
+              }),
+              new sap.m.ToolbarSpacer(),
+              new sap.m.Title({ text: "Covid 19 Vaccine Slot Booking"}),
+              new sap.m.ToolbarSpacer(),
+              new sap.m.ToolbarSpacer()
+            ]
+          }),
           id: "detail",
-          showHeader: sap.ui.Device.system.phone,
+          showHeader: true,
           showFooter: false,
           content: [oList]
         })],
@@ -299,21 +314,24 @@
           customHeader: new sap.m.Toolbar({
             content: [
               new sap.m.ToolbarSpacer(),
+              new sap.m.Title({ text: "Covid 19 Vaccine Slot Booking", visible: sap.ui.Device.system.phone }),
+              new sap.m.ToolbarSpacer(),
               new sap.m.Button({
-                text: "Display Slots", press: function () {
+                visible:sap.ui.Device.system.phone,
+                icon: "sap-icon://feeder-arrow", press: function () {
                   oApp.toDetail(oApp.getDetailPages()[0], "flip");
                 }
               })
             ]
           }),
           id: "master",
-          showHeader: sap.ui.Device.system.phone,
+          showHeader: true,
           showFooter: false,
           content: [oMasterPageContent]
         })]
       });
       oApp.setBusyIndicatorDelay(0);
-      oApp.addStyleClass("sapUiResponsiveMargin");
+     // oApp.addStyleClass("sapUiResponsiveMargin");
       oApp.setModel(oModel, "Local");
       oApp.placeAt("content");
       //oApp.placeAt("content");
@@ -632,5 +650,7 @@
     });
   </script>
 </head>
+
 <body class="sapUiBody" id="content"></body>
+
 </html>
