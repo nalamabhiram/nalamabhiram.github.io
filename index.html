@@ -88,7 +88,7 @@
               items: [
                 new sap.m.VBox({
                   items: [
-                    ["name", "block_name", "address", "district_name", "pincode", "available_capacity_dose1","available_capacity_dose2", "min_age_limit", "date", "vaccine"].map((skey) => {
+                    ["name", "block_name", "address", "district_name", "pincode", "available_capacity_dose1", "available_capacity_dose2", "min_age_limit", "date", "vaccine"].map((skey) => {
                       return new sap.m.ObjectAttribute({
                         title: skey,
                         text: `{Local>${skey}}`
@@ -102,13 +102,13 @@
                     }),
                     // new sap.m.HBox({
                     //   items: [
-                        new sap.m.Input({ value: "{Local>/captcha}", placeHolder: "Enter Image Text", }),
-                        new sap.m.Button({
-                          width:"100%",
-                          text: "book", press: function (oEvent) {
-                            fnBookSlot(oEvent.getSource().getBindingContext("Local").getObject())
-                          }
-                        })
+                    new sap.m.Input({ value: "{Local>/captcha}", placeHolder: "Enter Image Text", }),
+                    new sap.m.Button({
+                      width: "100%",
+                      text: "book", press: function (oEvent) {
+                        fnBookSlot(oEvent.getSource().getBindingContext("Local").getObject())
+                      }
+                    })
                     //   ]
                     // })
 
@@ -124,7 +124,7 @@
         path: "Local>/SlotSet",
         template: oListItem
       });
-       let oMasterPageContent;
+      let oMasterPageContent;
       oMasterPageContent = new sap.m.VBox({
         items: [
           new sap.m.Panel({
@@ -155,7 +155,6 @@
               new sap.m.HBox({
                 visible: "{=${Local>/MobileNumber}.length>0}",
                 items: [
-
                   new sap.m.Input({
                     placeHolder: "Enter OTP",
                     value: "{Local>/OTP}"
@@ -183,9 +182,9 @@
             content: [
               new sap.m.VBox({
                 items: [
-                new sap.m.Label({ text: "Coma Seperated Benificiaries Ref ID:" }),
+                  new sap.m.Label({ text: "Benificiaries Ref ID (Coma Seperated):" }),
                   new sap.m.Input({
-                    placeholder: "Coma Seperated Benificiari Ref ID", value: "{Local>/BenRefID}", change: function (oEvent) {
+                    placeholder: "Benificiaries Ref ID (Coma Seperated):", value: "{Local>/BenRefID}", change: function (oEvent) {
                       let sPincodes = oEvent.getSource().getValue();
                       let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
                       _.set(oLocalStorageData, "BenRefID", sPincodes);
@@ -194,7 +193,7 @@
                   }),
                   new sap.m.Label({ text: "Dose:" }),
                   new sap.m.ComboBox({
-                    width:"100%",
+                    width: "100%",
                     placeholder: "Select Dose",
                     selectedKey: "{Local>/Dose}",
                     items: [new sap.ui.core.Item({
@@ -214,7 +213,7 @@
                   }),
                   new sap.m.Label({ text: "Age:" }),
                   new sap.m.ComboBox({
-                    width:"100%",
+                    width: "100%",
                     placeholder: "Select Age Type",
                     selectedKey: "{Local>/Age}",
                     items: [new sap.ui.core.Item({
@@ -234,7 +233,7 @@
                   }),
                   new sap.m.Label({ text: "Select State:" }),
                   new sap.m.ComboBox({
-                    width:"100%",
+                    width: "100%",
                     placeholder: "Select State",
                     selectedKey: "{Local>/SelectedStateID}",
                     items: {
@@ -272,9 +271,9 @@
                       })
                     }
                   }),
-                  new sap.m.Label({ text: "Coma Seperated pincodes:" }),
+                  new sap.m.Label({ text: "pincodes(Coma Seperated):" }),
                   new sap.m.Input({
-                    placeholder: "Coma Seperated pincodes", value: "{Local>/PinCodes}", change: function (oEvent) {
+                    placeholder: "pincodes(Coma Seperated)", value: "{Local>/PinCodes}", change: function (oEvent) {
                       let sPincodes = oEvent.getSource().getValue();
                       let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
                       _.set(oLocalStorageData, "PinCodes", sPincodes);
@@ -297,13 +296,13 @@
           customHeader: new sap.m.Toolbar({
             content: [
               new sap.m.Button({
-                visible:sap.ui.Device.system.phone,
+                visible: sap.ui.Device.system.phone,
                 icon: "sap-icon://nav-back", press: function () {
                   oApp.toMaster(oApp.getMasterPages()[0], "flip");
                 }
               }),
               new sap.m.ToolbarSpacer(),
-              new sap.m.Title({ text: "Covid 19 Vaccine Slot Booking"}),
+              new sap.m.Title({ text: "Covid 19 Vaccine Slot Booking" }),
               new sap.m.ToolbarSpacer(),
               new sap.m.ToolbarSpacer()
             ]
@@ -320,7 +319,7 @@
               new sap.m.Title({ text: "Covid 19 Vaccine Slot Booking", visible: sap.ui.Device.system.phone }),
               new sap.m.ToolbarSpacer(),
               new sap.m.Button({
-                visible:sap.ui.Device.system.phone,
+                visible: sap.ui.Device.system.phone,
                 icon: "sap-icon://feeder-arrow", press: function () {
                   oApp.toDetail(oApp.getDetailPages()[0], "flip");
                   fnFetchEmptySlots();
@@ -335,7 +334,7 @@
         })]
       });
       oApp.setBusyIndicatorDelay(0);
-     // oApp.addStyleClass("sapUiResponsiveMargin");
+      // oApp.addStyleClass("sapUiResponsiveMargin");
       oApp.setModel(oModel, "Local");
       oApp.placeAt("content");
       //oApp.placeAt("content");
@@ -406,7 +405,10 @@
             success: (oResponse) => {
               oApp.getModel("Local").setProperty("/token", _.get(oResponse, "token", ""));
               oApp.setBusy(false);
-              oModel.setProperty("/OTP","");
+              oModel.setProperty("/OTP", "");
+              let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+              _.set(oLocalStorageData, "BearerToken", _.get(oResponse, "token", ""));
+              localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
               resolve();
             },
             error: (jqXhr, textStatus, errorMessage) => {
@@ -420,7 +422,7 @@
         fnGetBenificiaries();
       }
       function fnGetAuthHeader() {
-        return { authorization: `Bearer ${oApp.getModel("Local").getProperty("/token")}` }
+        return { authorization: `Bearer ${_.get(JSON.parse(localStorage.getItem("SlotBookHelperCahedData")), "BearerToken") || oApp.getModel("Local").getProperty("/token")}` }
       }
       function fnFetchEmptySlots() {
         oApp.getModel("Local").setProperty("/SlotSet", []);
