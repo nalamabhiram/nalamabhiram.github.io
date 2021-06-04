@@ -88,8 +88,7 @@
               items: [
                 new sap.m.VBox({
                   items: [
-
-                    ["name", "block_name", "address", "district_name", "pincode", "available_capacity_dose1", "min_age_limit", "date", "vaccine", "session_id"].map((skey) => {
+                    ["name", "block_name", "address", "district_name", "pincode", "available_capacity_dose1","available_capacity_dose2", "min_age_limit", "date", "vaccine"].map((skey) => {
                       return new sap.m.ObjectAttribute({
                         title: skey,
                         text: `{Local>${skey}}`
@@ -101,16 +100,17 @@
                     new sap.m.Image({
                       src: "{Local>/captchaimage}"
                     }),
-                    new sap.m.HBox({
-                      items: [
+                    // new sap.m.HBox({
+                    //   items: [
                         new sap.m.Input({ value: "{Local>/captcha}", placeHolder: "Enter Image Text", }),
                         new sap.m.Button({
+                          width:"100%",
                           text: "book", press: function (oEvent) {
                             fnBookSlot(oEvent.getSource().getBindingContext("Local").getObject())
                           }
                         })
-                      ]
-                    })
+                    //   ]
+                    // })
 
                   ]
                 }),
@@ -151,7 +151,7 @@
                   })
                 ]
               }),
-              new sap.m.Label({ text: "Enter the OTP", visible: "{=${Local>/MobileNumber}.length>0}" }),
+              new sap.m.Label({ text: "Enter the OTP:", visible: "{=${Local>/MobileNumber}.length>0}" }),
               new sap.m.HBox({
                 visible: "{=${Local>/MobileNumber}.length>0}",
                 items: [
@@ -178,13 +178,63 @@
                 ]
               })
             ],
-            expanded: false,
-            expandable: true,
+            expanded: true,
+            expandable: false,
             content: [
               new sap.m.VBox({
                 items: [
-                  new sap.m.Label({ text: "Select State" }),
+                new sap.m.Label({ text: "Coma Seperated Benificiaries Ref ID:" }),
+                  new sap.m.Input({
+                    placeholder: "Coma Seperated Benificiari Ref ID", value: "{Local>/BenRefID}", change: function (oEvent) {
+                      let sPincodes = oEvent.getSource().getValue();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "BenRefID", sPincodes);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Label({ text: "Dose:" }),
                   new sap.m.ComboBox({
+                    width:"100%",
+                    placeholder: "Select Dose",
+                    selectedKey: "{Local>/Dose}",
+                    items: [new sap.ui.core.Item({
+                      text: "1",
+                      key: "1"
+                    }),
+                    new sap.ui.core.Item({
+                      text: "2",
+                      key: "2"
+                    })],
+                    selectionChange: function (oEvent) {
+                      let sDoseKey = oEvent.getParameter("selectedItem").getKey();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "Dose", sDoseKey);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Label({ text: "Age:" }),
+                  new sap.m.ComboBox({
+                    width:"100%",
+                    placeholder: "Select Age Type",
+                    selectedKey: "{Local>/Age}",
+                    items: [new sap.ui.core.Item({
+                      text: "18+",
+                      key: "18"
+                    }),
+                    new sap.ui.core.Item({
+                      text: "45+",
+                      key: "45"
+                    })],
+                    selectionChange: function (oEvent) {
+                      let sDoseKey = oEvent.getParameter("selectedItem").getKey();
+                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
+                      _.set(oLocalStorageData, "Age", sDoseKey);
+                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
+                    }
+                  }),
+                  new sap.m.Label({ text: "Select State:" }),
+                  new sap.m.ComboBox({
+                    width:"100%",
                     placeholder: "Select State",
                     selectedKey: "{Local>/SelectedStateID}",
                     items: {
@@ -204,7 +254,7 @@
                       fnFetchDistricts(sSeletedStateID);
                     }
                   }),
-                  new sap.m.Label({ text: "Select District" }),
+                  new sap.m.Label({ text: "Select District:" }),
                   new sap.m.MultiComboBox({
                     selectedKeys: "{Local>/SelectedDistrictIDs}",
                     selectionFinish: function (oEvent) {
@@ -222,59 +272,12 @@
                       })
                     }
                   }),
-                  new sap.m.Label({ text: "Coma Seperated pincodes" }),
+                  new sap.m.Label({ text: "Coma Seperated pincodes:" }),
                   new sap.m.Input({
                     placeholder: "Coma Seperated pincodes", value: "{Local>/PinCodes}", change: function (oEvent) {
                       let sPincodes = oEvent.getSource().getValue();
                       let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
                       _.set(oLocalStorageData, "PinCodes", sPincodes);
-                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
-                    }
-                  }),
-                  new sap.m.Label({ text: "Coma Seperated Benificiaries Ref ID" }),
-                  new sap.m.Input({
-                    placeholder: "Coma Seperated Benificiari Ref ID", value: "{Local>/BenRefID}", change: function (oEvent) {
-                      let sPincodes = oEvent.getSource().getValue();
-                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
-                      _.set(oLocalStorageData, "BenRefID", sPincodes);
-                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
-                    }
-                  }),
-                  new sap.m.Label({ text: "Dose" }),
-                  new sap.m.ComboBox({
-                    placeholder: "Select Dose",
-                    selectedKey: "{Local>/Dose}",
-                    items: [new sap.ui.core.Item({
-                      text: "1",
-                      key: "1"
-                    }),
-                    new sap.ui.core.Item({
-                      text: "2",
-                      key: "2"
-                    })],
-                    selectionChange: function (oEvent) {
-                      let sDoseKey = oEvent.getParameter("selectedItem").getKey();
-                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
-                      _.set(oLocalStorageData, "Dose", sDoseKey);
-                      localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
-                    }
-                  }),
-                  new sap.m.Label({ text: "Age" }),
-                  new sap.m.ComboBox({
-                    placeholder: "Select Age Type",
-                    selectedKey: "{Local>/Age}",
-                    items: [new sap.ui.core.Item({
-                      text: "18+",
-                      key: "18"
-                    }),
-                    new sap.ui.core.Item({
-                      text: "45+",
-                      key: "45"
-                    })],
-                    selectionChange: function (oEvent) {
-                      let sDoseKey = oEvent.getParameter("selectedItem").getKey();
-                      let oLocalStorageData = JSON.parse(localStorage.getItem("SlotBookHelperCahedData"));
-                      _.set(oLocalStorageData, "Age", sDoseKey);
                       localStorage.setItem("SlotBookHelperCahedData", JSON.stringify(oLocalStorageData));
                     }
                   })
@@ -320,6 +323,7 @@
                 visible:sap.ui.Device.system.phone,
                 icon: "sap-icon://feeder-arrow", press: function () {
                   oApp.toDetail(oApp.getDetailPages()[0], "flip");
+                  fnFetchEmptySlots();
                 }
               })
             ]
@@ -402,6 +406,7 @@
             success: (oResponse) => {
               oApp.getModel("Local").setProperty("/token", _.get(oResponse, "token", ""));
               oApp.setBusy(false);
+              oModel.setProperty("/OTP","");
               resolve();
             },
             error: (jqXhr, textStatus, errorMessage) => {
