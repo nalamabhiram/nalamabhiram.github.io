@@ -3,7 +3,7 @@
 India Covid 19 vaccine slot booking helper
 Currently We are booking our vaccine slots at https://selfregistration.cowin.gov.in/.
 But most of the time we see all the slots booked completely.
-https://under45.in/  has Telegram groups which notifies the subscribers immediately when Slots are available(if not Subscribed, please subsribe it first). Even with that live notifications,all the slots are getting booked within a span of a minute and in the actual cowin site, we are unable to book slots, within that time. So this App mainly helps us to book slots, within seconds by Pre capturing all the necessary details we need to book.
+https://under45.in/  has Telegram groups which notifies the subscribers immediately when Slots are available(if not Subscribed, please subsribe it first). Even with that live notifications,all the slots are getting booked within a minute and in the actual cowin site, we are unable to book slots, within that time. So this App mainly helps us to book slots, within seconds by Pre capturing all the necessary details we need to book.
 
 **Instructions to use:**  
 **Important One Time App Configuration:(This helps application to fetch related slots quickly,These data will be saved)**  
