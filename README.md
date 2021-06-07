@@ -9,15 +9,14 @@ This App mainly helps us to book slots, within seconds by Pre capturing all the 
 
 **Instructions to use:**  
 **Important One Time App Configuration:(This helps application to fetch related slots quickly,These data will be saved)**  
-1.Under Configuration section, click on Arrow button to open the section.  
-2.Select State and Districts or  enter the pincode(comma separated, if multiple pin codes needed.) **mandatory**  
-3.Enter the Correct Beneficiary Ref IDs from Cowin Portal registered with actual mobile number(comma separated, if multiple pin codes needed.), if this is not provided the booking will be done for all the beneficiaries tagged to the mobile number provided.  
-4.Select the Dose( Default selection to 1)  
-5.Slect the Age ( Default selection to 18 + option)  
+1.Enter the Correct Beneficiary Ref IDs as per Cowin Portal, registered with actual mobile number(comma separated, if multiple ref ID's needed.), if this is not provided, the booking will be done for all the beneficiaries tagged to the mobile number.  
+2.Select the Dose( Default selection to 1)  
+3.Slect the Age ( Default selection to 18 + option)  
+4.Select State & Districts or  enter the pincode(comma separated, if multiple pin codes needed.) **mandatory**  
 
 **Steps to book slot:**  
 1.Complete the one time configuration if not done already.  
 2.Enter The mobile number and click the "Generate OTP" Button.  
-3.Eneter the OTP and Click the "Submit OTP" Button.  
-4.If slots according to your configuration are available, those centers and slot details will be displayed.  
+3.Enter the OTP and Click the "Submit OTP" Button.  
+4.If slots are available according to your configuration, those centers and slot details will be displayed.  
 5.Enter the text from the image into the field below the image at a particular item and click "Book" Button.  
