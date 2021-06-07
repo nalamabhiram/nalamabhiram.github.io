@@ -8,7 +8,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Slot Booking Helper</title>
+  <title>Slot Booking Helper-Abhiram</title>
   <!-- <script id="sap-ui-bootstrap"
 		src="https://openui5.hana.ondemand.com/resources/sap-ui-core.js"
 		data-sap-ui-theme="sap_belize"
@@ -157,6 +157,7 @@
                 items: [
                   new sap.m.Input({
                     placeHolder: "Enter OTP",
+                    valueLiveUpdate: true,
                     value: "{Local>/OTP}"
                   }),
                   new sap.m.Button({
@@ -317,19 +318,25 @@
             content: [
               new sap.m.ToolbarSpacer(),
               new sap.m.Title({ text: "Covid 19 Vaccine Slot Booking", visible: sap.ui.Device.system.phone }),
-              new sap.m.ToolbarSpacer(),
-              new sap.m.Button({
-                visible: sap.ui.Device.system.phone,
-                icon: "sap-icon://feeder-arrow", press: function () {
-                  oApp.toDetail(oApp.getDetailPages()[0], "flip");
-                  fnFetchEmptySlots();
-                }
-              })
+              new sap.m.ToolbarSpacer()
             ]
           }),
           id: "master",
           showHeader: true,
-          showFooter: false,
+          showFooter: sap.ui.Device.system.phone,
+          footer:new sap.m.Toolbar({
+            active:true,
+            press: function () {
+                  oApp.toDetail(oApp.getDetailPages()[0], "flip");
+                  fnFetchEmptySlots();
+                },
+
+            content: [
+              new sap.m.ToolbarSpacer(),
+              new sap.m.Title({text:"Display Vaccine Cenetrs"}),
+              new sap.m.ToolbarSpacer()
+            ]
+          }),
           content: [oMasterPageContent]
         })]
       });
